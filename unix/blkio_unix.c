@@ -2,6 +2,7 @@
  * Implementation of block IO routines on Unix platforms.
  */
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -10,6 +11,14 @@
 #include "port.h"
 #include "common.h"
 #include "blkio.h"
+
+struct DevInfo
+{
+	char *path;
+	int fd;
+	int block_size;
+	uint64_t blocks;
+};
 
 DevInfo *
 blkio_open(char *path)
@@ -37,7 +46,7 @@ blkio_open(char *path)
 		return 0;
 	}
 
-	if (ioctl(dev_info->fd, BLKSSZGET, &dev_info->sector_size) == -1)
+	if (ioctl(dev_info->fd, BLKSSZGET, &dev_info->block_size) == -1)
 	{
 		error("blkio_open", "ioctl(BLKSSZGET) failed");
 		free(dev_info);
@@ -50,7 +59,25 @@ blkio_open(char *path)
 		free(dev_info);
 		return 0;
 	}
-	dev_info->blocks = dev_size/dev_info->sector_size;
+	dev_info->blocks = dev_size/dev_info->block_size;
 
 	return dev_info;
+}
+
+void
+blkio_describe(DevInfo *dev_info, char *str, int size)
+{
+	snprintf(str, size, "device: %s", dev_info->path);
+}
+
+int
+blkio_block_size(DevInfo *dev_info)
+{
+	return dev_info->block_size;
+}
+
+uint64_t
+blkio_total_blocks(DevInfo *dev_info)
+{
+	return dev_info->blocks;
 }

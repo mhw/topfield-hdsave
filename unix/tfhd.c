@@ -77,6 +77,8 @@ static void
 info_cmd(int argc, char *argv[])
 {
 	FSInfo *fs_info;
+	DevInfo *dev_info;
+	char buf[80];
 
 	if ((fs_info = fs_open(opts.device_path)) == 0)
 	{
@@ -84,7 +86,9 @@ info_cmd(int argc, char *argv[])
 		return;
 	}
 
-	printf("device: %s\n", fs_info->dev_info->path);
-	printf("sector size: %d\n", fs_info->dev_info->sector_size);
-	printf("blocks: %ld\n", fs_info->dev_info->blocks);
+	dev_info = fs_info->dev_info;
+	blkio_describe(dev_info, buf, sizeof(buf));
+	printf("%s\n", buf);
+	printf("block size: %d\n", blkio_block_size(dev_info));
+	printf("blocks: %ld\n", blkio_total_blocks(dev_info));
 }
