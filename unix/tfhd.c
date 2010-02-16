@@ -10,11 +10,14 @@
 #include "blkio.h"
 #include "fs.h"
 
+extern void blkio_set_size_override(uint64_t size);
+
 static void info_cmd(int argc, char *argv[]);
 
 typedef struct {
 	char *device_path;
 	char *disk_map;
+	char *size_override;
 	char *command;
 } Options;
 
@@ -27,6 +30,7 @@ usage(void)
 	fputs("options:\n", stderr);
 	fputs("\t-f DEVICE\tTopfield disk to manipulate\n", stderr);
 	fputs("\t-m FILE\t\tUse a previously saved map file\n", stderr);
+	fputs("\t-s SIZE\t\tSet disk size instead of probing device\n", stderr);
 	fputs("commands:\n", stderr);
 	fputs("\tinfo\t\tPrint basic information about the disk\n", stderr);
 	exit(EXIT_FAILURE);
@@ -37,7 +41,7 @@ parse_options(int argc, char *argv[])
 {
 	int opt;
 
-	while ((opt = getopt(argc, argv, "f:m:")) != -1)
+	while ((opt = getopt(argc, argv, "f:m:s:")) != -1)
 	{
 		switch (opt)
 		{
@@ -46,6 +50,9 @@ parse_options(int argc, char *argv[])
 			break;
 		case 'm':
 			opts.disk_map = optarg;
+			break;
+		case 's':
+			opts.size_override = optarg;
 			break;
 		default:
 			usage();
@@ -62,6 +69,12 @@ int
 main(int argc, char *argv[])
 {
 	argc = parse_options(argc, argv);
+
+	if (opts.size_override)
+	{
+		uint64_t size = parse_disk_size(opts.size_override);
+		blkio_set_size_override(size);
+	}
 
 	if (strcmp(opts.command, "info") == 0)
 	{

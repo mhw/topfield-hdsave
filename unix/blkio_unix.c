@@ -12,6 +12,8 @@
 #include "common.h"
 #include "blkio.h"
 
+#define DEFAULT_BLOCK_SIZE 512
+
 struct DevInfo
 {
 	char *path;
@@ -20,10 +22,21 @@ struct DevInfo
 	uint64_t blocks;
 };
 
+static uint64_t size_override = 0;
+
+void
+blkio_set_size_override(uint64_t size)
+{
+	size_override = size;
+	fprintf(stderr, "forcing device size to be %s\n",
+			format_disk_size(size_override));
+}
+
 DevInfo *
 blkio_open(char *path)
 {
 	DevInfo *dev_info;
+	struct stat dev_stat;
 	uint64_t dev_size;
 
 	if (!path)
@@ -46,22 +59,51 @@ blkio_open(char *path)
 		return 0;
 	}
 
-	if (ioctl(dev_info->fd, BLKSSZGET, &dev_info->block_size) == -1)
+	if (fstat(dev_info->fd, &dev_stat) == -1)
 	{
-		error("blkio_open", "ioctl(BLKSSZGET) failed");
+		error("blkio_open", "fstat failed");
 		free(dev_info);
 		return 0;
 	}
 
-	if (ioctl(dev_info->fd, BLKGETSIZE64, &dev_size) == -1)
+	if (S_ISREG(dev_stat.st_mode))
 	{
-		error("blkio_open", "ioctl(BLKGETSIZE64) failed");
-		free(dev_info);
-		return 0;
-	}
-	dev_info->blocks = dev_size/dev_info->block_size;
+		uint64_t size = size_override? size_override : dev_stat.st_size;
 
-	return dev_info;
+		dev_info->block_size = DEFAULT_BLOCK_SIZE;
+		dev_info->blocks = size/dev_info->block_size;
+		return dev_info;
+	}
+	else if (S_ISBLK(dev_stat.st_mode))
+	{
+		if (ioctl(dev_info->fd, BLKSSZGET, &dev_info->block_size) == -1)
+		{
+			error("blkio_open", "ioctl(BLKSSZGET) failed");
+			free(dev_info);
+			return 0;
+		}
+
+		if (size_override)
+		{
+			dev_info->blocks = size_override/dev_info->block_size;
+		}
+		else
+		{
+			if (ioctl(dev_info->fd, BLKGETSIZE64, &dev_size) == -1)
+			{
+				error("blkio_open", "ioctl(BLKGETSIZE64) failed");
+				free(dev_info);
+				return 0;
+			}
+			dev_info->blocks = dev_size/dev_info->block_size;
+		}
+
+		return dev_info;
+	}
+
+	error("blkio_open", "not a file or block device");
+	free(dev_info);
+	return 0;
 }
 
 void
