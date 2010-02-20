@@ -20,6 +20,7 @@ struct DevInfo
 	int fd;
 	int block_size;
 	uint64_t blocks;
+	uint64_t bytes;
 };
 
 static uint64_t size_override = 0;
@@ -72,6 +73,7 @@ blkio_open(char *path)
 
 		dev_info->block_size = DEFAULT_BLOCK_SIZE;
 		dev_info->blocks = size/dev_info->block_size;
+		dev_info->bytes = size;
 		return dev_info;
 	}
 	else if (S_ISBLK(dev_stat.st_mode))
@@ -86,6 +88,7 @@ blkio_open(char *path)
 		if (size_override)
 		{
 			dev_info->blocks = size_override/dev_info->block_size;
+			dev_info->bytes = size_override;
 		}
 		else
 		{
@@ -96,6 +99,7 @@ blkio_open(char *path)
 				return 0;
 			}
 			dev_info->blocks = dev_size/dev_info->block_size;
+			dev_info->bytes = dev_size;
 		}
 
 		return dev_info;
@@ -125,4 +129,36 @@ uint64_t
 blkio_total_blocks(DevInfo *dev_info)
 {
 	return dev_info->blocks;
+}
+
+uint64_t
+blkio_read(DevInfo *dev_info, void *buf, uint64_t offset, uint64_t count)
+{
+	int bytes;
+
+	if (offset > dev_info->bytes)
+	{
+		error("blkio_read", "offset 0x%" PRIx64 " > disk size 0x%" PRIx64, offset, dev_info->bytes);
+		return -1;
+	}
+
+	if (lseek(dev_info->fd, offset, SEEK_SET) == -1)
+	{
+		sys_error("blkio_read", "seek to 0x%" PRIx64 " failed", offset);
+		return -1;
+	}
+
+	if ((bytes = read(dev_info->fd, buf, count)) == -1)
+	{
+		sys_error("blkio_read", "read failed");
+		return -1;
+	}
+
+	if (bytes < count)
+	{
+		error("blkio_read", "short read - wanted 0x%" PRIx64 " bytes, got 0x%" PRIx64 " bytes", count, bytes);
+		return -1;
+	}
+
+	return bytes;
 }

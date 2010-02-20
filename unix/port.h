@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include <byteswap.h>
 
 /*
  * Error function specifically for Unix system call failures.

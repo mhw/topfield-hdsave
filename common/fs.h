@@ -4,6 +4,7 @@
 
 typedef struct {
 	DevInfo *dev_info;
+	int block_size;
 	int cluster_size;
 } FSInfo;
 

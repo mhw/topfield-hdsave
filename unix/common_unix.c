@@ -19,9 +19,20 @@ sys_error(char *where, char *fmt, ...)
 }
 
 void
-error(char *where, char *what)
+error(char *where, char *fmt, ...)
 {
-	snprintf(error_buffer, sizeof(error_buffer), "%s: %s", where, what);
+	va_list ap;
+
+	va_start(ap, fmt);
+	verror(where, fmt, ap);
+	va_end(ap);
+}
+
+void 
+verror(char *where, char *fmt, va_list ap)
+{
+	snprintf(fmt_buffer, sizeof(fmt_buffer), "%s: %s", where, fmt);
+	vsnprintf(error_buffer, sizeof(error_buffer), fmt_buffer, ap);
 }
 
 void
