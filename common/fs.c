@@ -123,6 +123,13 @@ fs_read_super_blocks(FSInfo *fs_info)
 		return 0;
 	}
 
+	if (memcmp(sb1, sb2, fs_info->block_size) != 0)
+	{
+		fs_error("super blocks do not match");
+		free(sb_buffer);
+		return 0;
+	}
+
 	if (!fs_check_hd_identifier(sb1, sb2))
 	{
 		free(sb_buffer);
@@ -147,12 +154,6 @@ fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2)
 	if (i < 0)
 	{
 		fs_error("super block identifier not recognised");
-		return 0;
-	}
-
-	if (memcmp(sb1->identifier, sb2->identifier, sizeof(sb1->identifier)) != 0)
-	{
-		fs_error("super block identifiers do not match");
 		return 0;
 	}
 
