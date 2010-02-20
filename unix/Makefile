@@ -1,4 +1,4 @@
-CFLAGS=-I. -I../common -D_FILE_OFFSET_BITS=64
+CFLAGS=-g -I. -I../common -D_FILE_OFFSET_BITS=64
 
 VPATH=.:../common
 
