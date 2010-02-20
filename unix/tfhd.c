@@ -12,7 +12,7 @@
 
 extern void blkio_set_size_override(uint64_t size);
 
-static void info_cmd(int argc, char *argv[]);
+static int info_cmd(int argc, char *argv[]);
 
 typedef struct {
 	char *device_path;
@@ -68,6 +68,8 @@ parse_options(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
+	int success;
+
 	argc = parse_options(argc, argv);
 
 	if (opts.size_override)
@@ -78,15 +80,25 @@ main(int argc, char *argv[])
 
 	if (strcmp(opts.command, "info") == 0)
 	{
-		info_cmd(argc, argv);
+		success = info_cmd(argc, argv);
 	}
 	else
 	{
 		usage();
 	}
+
+	if (success)
+	{
+		return 0;
+	}
+	else
+	{
+		fprintf(stderr, "%s\n", get_error());
+		return 1;
+	}
 }
 
-static void
+static int
 info_cmd(int argc, char *argv[])
 {
 	FSInfo *fs_info;
@@ -94,10 +106,7 @@ info_cmd(int argc, char *argv[])
 	char buf[80];
 
 	if ((fs_info = fs_open(opts.device_path)) == 0)
-	{
-		fprintf(stderr, "%s\n", get_error());
-		return;
-	}
+		return 0;
 
 	dev_info = fs_info->dev_info;
 	blkio_describe(dev_info, buf, sizeof(buf));
