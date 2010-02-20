@@ -112,4 +112,6 @@ info_cmd(int argc, char *argv[])
 	blkio_describe(dev_info, buf, sizeof(buf));
 	printf("%s\n", buf);
 	printf("Filesystem cluster size: %d blocks\n", fs_info->blocks_per_cluster);
+	printf("Root directory cluster: %d\n", fs_info->root_dir_cluster);
+	printf("Used clusters: %d\n", fs_info->used_clusters);
 }

@@ -29,6 +29,12 @@ typedef struct {
 	char identifier[28];
 	uint16_t version;
 	uint16_t sectors_per_cluster;
+	// firebird's doc suggests this is a 16 bit value
+	uint16_t root_dir_cluster;
+	uint16_t unused_1;
+	uint32_t used_clusters;
+	uint32_t unused_bytes_in_root;
+	uint32_t fat_crc32;
 } SuperBlock;
 
 static int fs_read_super_blocks(FSInfo *fs_info);
@@ -148,6 +154,10 @@ fs_read_super_blocks(FSInfo *fs_info)
 	}
 
 	fs_info->blocks_per_cluster = be16toh(sb1->sectors_per_cluster);
+	fs_info->root_dir_cluster = be16toh(sb1->root_dir_cluster);
+	fs_info->used_clusters = be32toh(sb1->used_clusters);
+	fs_info->unused_bytes_in_root = be32toh(sb1->unused_bytes_in_root);
+	fs_info->fat_crc32 = be32toh(sb1->fat_crc32);
 
 	return 1;
 }
