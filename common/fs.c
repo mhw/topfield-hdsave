@@ -142,7 +142,7 @@ fs_read_super_blocks(FSInfo *fs_info)
 static int
 fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2)
 {
-	int i = sizeof(fs_valid_identifiers)/sizeof(fs_valid_identifiers[0])-1;
+	int i = elementsof(fs_valid_identifiers)-1;
 
 	while (i >= 0)
 	{

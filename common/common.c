@@ -22,7 +22,7 @@ find_factor_for(const char *prefix)
 {
 	int i;
 
-	for (i = 0; i < sizeof(prefix_factors) / sizeof(prefix_factors[0]); i++)
+	for (i = 0; i < elementsof(prefix_factors); i++)
 		if (strcmp(prefix, prefix_factors[i].prefix) == 0)
 			return prefix_factors[i].factor;
 	return 1;
