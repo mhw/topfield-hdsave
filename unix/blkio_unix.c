@@ -54,7 +54,7 @@ blkio_open(char *path)
 	dev_info->path = path;
 	if ((dev_info->fd = open(path, O_RDONLY)) == -1)
 	{
-		error("blkio_open", "could not open device");
+		sys_error("blkio_open", "could not open '%s'", path);
 		free(dev_info);
 		return 0;
 	}
