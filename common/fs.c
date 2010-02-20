@@ -22,9 +22,13 @@ static char *fs_valid_identifiers[] = {
 	// "TOPFIELD PVR HDD",
 };
 
+#define FS_VERSION 0x0101
+
 typedef struct {
 	uint32_t magic;
 	char identifier[28];
+	uint16_t version;
+	uint16_t sectors_per_cluster;
 } SuperBlock;
 
 static int fs_read_super_blocks(FSInfo *fs_info);
@@ -135,6 +139,15 @@ fs_read_super_blocks(FSInfo *fs_info)
 		free(sb_buffer);
 		return 0;
 	}
+
+	if (be16toh(sb1->version) != FS_VERSION)
+	{
+		fs_error("unrecognised filesystem version number 0x%" PRIx16, be16toh(sb1->version));
+		free(sb_buffer);
+		return 0;
+	}
+
+	fs_info->blocks_per_cluster = be16toh(sb1->sectors_per_cluster);
 
 	return 1;
 }
