@@ -159,6 +159,8 @@ fs_read_super_blocks(FSInfo *fs_info)
 	fs_info->unused_bytes_in_root = be32toh(sb1->unused_bytes_in_root);
 	fs_info->fat_crc32 = be32toh(sb1->fat_crc32);
 
+	free(sb_buffer);
+
 	return 1;
 }
 
