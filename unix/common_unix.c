@@ -54,3 +54,15 @@ vwarn(char *fmt, va_list ap)
 	vfprintf(stderr, fmt, ap);
 	fputs("\n", stderr);
 }
+
+void
+fatal(char *where, char *fmt, ...)
+{
+	va_list ap;
+
+	fprintf(stderr, "FATAL: %s: ", where);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fputs("\n", stderr);
+}

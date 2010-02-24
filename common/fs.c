@@ -62,6 +62,23 @@ typedef struct {
 	uint32_t fat_crc32;
 } SuperBlock;
 
+typedef struct {
+	uint8_t type;
+	char mtime[7];
+	uint32_t start_cluster;
+	uint32_t clusters;
+	uint32_t unused_bytes_in_last_cluster;
+	char filename[64];
+	char service_name[31];
+	char unused1;
+	uint32_t attributes;
+	uint16_t flags;
+	char unused2[2];
+	uint8_t unused3;
+	uint8_t s3_crc;
+	uint16_t bytes_in_last_block;
+} DirEntry;
+
 static int fs_blocks_per_cluster(DevInfo *dev);
 static int fs_read_super_blocks(FSInfo *fs);
 static int fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2);
@@ -285,5 +302,63 @@ fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2)
 		return 0;
 	}
 
+	return 1;
+}
+
+static uint64_t
+fs_blk_offset(FSInfo *fs, int cluster, int cluster_offset)
+{
+	if (cluster < -1)
+	{
+		fatal("fs_blk_offset", "invalid cluster number %d", cluster);
+		return 0;
+	}
+
+	if (cluster_offset < 0
+		|| cluster_offset > fs->blocks_per_cluster*fs->block_size)
+	{
+		fatal("fs_blk_offset", "invalid offset within cluster %d", cluster_offset);
+		return 0;
+	}
+
+	return (cluster+1)*fs->blocks_per_cluster*fs->block_size+cluster_offset;
+}
+
+int
+fs_read_directory(FSInfo *fs, char *path)
+{
+	char *dir_buffer;
+	int bs = 188*512;
+	DirEntry *dir_entry;
+
+	if (strcmp("/", path) != 0)
+	{
+		fs_error("fs_read_directory can't handle path '%s'", path);
+		return 0;
+	}
+
+	if ((dir_buffer = malloc(188*512)) == 0)
+	{
+		no_memory("fs_read_directory");
+		return 0;
+	}
+
+	if (!blkio_read(fs->disk->dev, dir_buffer, fs_blk_offset(fs, fs->root_dir_cluster, 0), bs))
+	{
+		free(dir_buffer);
+		return 0;
+	}
+
+	fs_swap_bytes(dir_buffer, bs);
+
+	dir_entry = (DirEntry *)dir_buffer;
+
+	while (dir_entry < (DirEntry *)(dir_buffer+bs)) {
+		if (dir_entry->type != 0xff)
+			printf("%s\n", dir_entry->filename);
+		dir_entry++;
+	}
+
+	free(dir_buffer);
 	return 1;
 }

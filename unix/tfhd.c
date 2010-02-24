@@ -117,6 +117,8 @@ info_cmd(int argc, char *argv[])
 	printf("Filesystem cluster size: %d blocks\n", fs->blocks_per_cluster);
 	printf("Root directory cluster: %d\n", fs->root_dir_cluster);
 	printf("Used clusters: %d\n", fs->used_clusters);
+	printf("Root directory:\n");
+	fs_read_directory(fs, "/");
 	fs_close(fs);
 	disk_close(disk);
 	return 1;

@@ -13,3 +13,5 @@ extern void no_memory(char *where);
 extern char *get_error(void);
 
 extern void vwarn(char *fmt, va_list ap);
+
+extern void fatal(char *where, char *fmt, ...);

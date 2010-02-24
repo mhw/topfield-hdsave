@@ -23,3 +23,4 @@ extern void disk_close(DiskInfo *disk);
 
 extern FSInfo *fs_open_disk(DiskInfo *disk);
 extern void fs_close(FSInfo *fs);
+extern int fs_read_directory(FSInfo *fs, char *path);
