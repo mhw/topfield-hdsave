@@ -113,9 +113,10 @@ blkio_open(char *path)
 void
 blkio_describe(DevInfo *dev_info, char *str, int size)
 {
-	snprintf(str, size, "%s: %s device with %d byte blocks",
+	snprintf(str, size, "%s: %s device - %" PRId64 " * %d byte blocks",
 			dev_info->path,
 			format_disk_size(dev_info->blocks*dev_info->block_size),
+			dev_info->blocks,
 			dev_info->block_size);
 }
 
