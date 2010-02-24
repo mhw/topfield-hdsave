@@ -11,3 +11,5 @@ extern void error(char *where, char *fmt, ...);
 extern void verror(char *where, char *fmt, va_list ap);
 extern void no_memory(char *where);
 extern char *get_error(void);
+
+extern void vwarn(char *fmt, va_list ap);

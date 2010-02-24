@@ -111,6 +111,14 @@ blkio_open(char *path)
 }
 
 void
+blkio_close(DevInfo *dev_info)
+{
+	if (close(dev_info->fd) == -1)
+		sys_error("blkio_close", "close failed");
+	free(dev_info);
+}
+
+void
 blkio_describe(DevInfo *dev_info, char *str, int size)
 {
 	snprintf(str, size, "%s: %s device - %" PRId64 " * %d byte blocks",

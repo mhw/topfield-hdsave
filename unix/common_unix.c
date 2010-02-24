@@ -28,7 +28,7 @@ error(char *where, char *fmt, ...)
 	va_end(ap);
 }
 
-void 
+void
 verror(char *where, char *fmt, va_list ap)
 {
 	snprintf(fmt_buffer, sizeof(fmt_buffer), "%s: %s", where, fmt);
@@ -45,4 +45,12 @@ char *
 get_error(void)
 {
 	return error_buffer;
+}
+
+void
+vwarn(char *fmt, va_list ap)
+{
+	fputs("warning: ", stderr);
+	vfprintf(stderr, fmt, ap);
+	fputs("\n", stderr);
 }
