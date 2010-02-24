@@ -7,6 +7,9 @@ OBJS=tfhd.o $(COMMON) blkio_unix.o common_unix.o
 
 tfhd: $(OBJS)
 
+clean:
+	rm tfhd $(OBJS)
+
 tfhd.o:		fs.h blkio.h common.h port.h
 common.o:	common.h port.h
 fs.o:		fs.h blkio.h common.h port.h
