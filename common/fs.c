@@ -173,7 +173,10 @@ fs_open_disk(DiskInfo *disk)
 void
 fs_close(FSInfo *fs)
 {
-	disk_close(fs->disk);
+	/*
+	 * We don't close the disk here as multiple FSInfo instances
+	 * may refer to the same DiskInfo.
+	 */
 	free(fs);
 }
 
