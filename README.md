@@ -14,6 +14,15 @@ is that the disk map represents a complete enough backup of the Topfield
 disk structure that the majority of the underlying recordings could be
 recovered in the event that the disk structure gets trashed by the crash.
 
+Current State
+-------------
+
+HDSave is still in development and should be considered alpha quality.
+The raw device is opened read-only, so it should currently not be possible
+for tfhd to alter the disk's contents. Your mileage may vary though.
+The Unix command line program is able to read the super block and root
+directory of a Topfield hard disk. Work on the TAP has not yet started.
+
 Some Implementation Thoughts
 ----------------------------
 
