@@ -102,19 +102,19 @@ static int
 info_cmd(int argc, char *argv[])
 {
 	DiskInfo *disk;
-	FSInfo *fs_info;
-	DevInfo *dev_info;
+	FSInfo *fs;
+	DevInfo *dev;
 	char buf[80];
 
 	if ((disk = disk_open(opts.device_path)) == 0)
 		return 0;
-	if ((fs_info = fs_open_disk(disk)) == 0)
+	if ((fs = fs_open_disk(disk)) == 0)
 		return 0;
 
-	dev_info = fs_info->disk->dev_info;
-	blkio_describe(dev_info, buf, sizeof(buf));
+	dev = fs->disk->dev;
+	blkio_describe(dev, buf, sizeof(buf));
 	printf("%s\n", buf);
-	printf("Filesystem cluster size: %d blocks\n", fs_info->blocks_per_cluster);
-	printf("Root directory cluster: %d\n", fs_info->root_dir_cluster);
-	printf("Used clusters: %d\n", fs_info->used_clusters);
+	printf("Filesystem cluster size: %d blocks\n", fs->blocks_per_cluster);
+	printf("Root directory cluster: %d\n", fs->root_dir_cluster);
+	printf("Used clusters: %d\n", fs->used_clusters);
 }

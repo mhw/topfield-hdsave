@@ -63,7 +63,7 @@ typedef struct {
 } SuperBlock;
 
 static int fs_blocks_per_cluster(DevInfo *dev);
-static int fs_read_super_blocks(FSInfo *fs_info);
+static int fs_read_super_blocks(FSInfo *fs);
 static int fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2);
 
 static void
@@ -97,7 +97,7 @@ disk_open(char *path)
 		return 0;
 	}
 
-	if ((disk->dev_info = blkio_open(path)) == 0)
+	if ((disk->dev = blkio_open(path)) == 0)
 	{
 		free(disk);
 		return 0;
@@ -108,7 +108,7 @@ disk_open(char *path)
 	 * Topfield firmware regardless of device characteristics.
 	 */
 	disk->block_size = 512;
-	disk->blocks_per_cluster = fs_blocks_per_cluster(disk->dev_info);
+	disk->blocks_per_cluster = fs_blocks_per_cluster(disk->dev);
 
 	return disk;
 }
@@ -116,7 +116,7 @@ disk_open(char *path)
 void
 disk_close(DiskInfo *disk)
 {
-	blkio_close(disk->dev_info);
+	blkio_close(disk->dev);
 	free(disk);
 }
 
@@ -148,33 +148,33 @@ fs_blocks_per_cluster(DevInfo *dev)
 }
 
 FSInfo *
-fs_open_disk(DiskInfo *disk_info)
+fs_open_disk(DiskInfo *disk)
 {
-	FSInfo *fs_info;
+	FSInfo *fs;
 
-	if ((fs_info = malloc(sizeof(FSInfo))) == 0)
+	if ((fs = malloc(sizeof(FSInfo))) == 0)
 	{
 		no_memory("fs_open_disk");
 		return 0;
 	}
 
-	fs_info->disk = disk_info;
-	fs_info->block_size = disk_info->block_size;
+	fs->disk = disk;
+	fs->block_size = disk->block_size;
 
-	if (!fs_read_super_blocks(fs_info))
+	if (!fs_read_super_blocks(fs))
 	{
-		free(fs_info);
+		free(fs);
 		return 0;
 	}
 
-	return fs_info;
+	return fs;
 }
 
 void
-fs_close(FSInfo *fs_info)
+fs_close(FSInfo *fs)
 {
-	disk_close(fs_info->disk);
-	free(fs_info);
+	disk_close(fs->disk);
+	free(fs);
 }
 
 static void
@@ -190,26 +190,26 @@ fs_swap_bytes(void *buf, int count)
 }
 
 static int
-fs_read_super_blocks(FSInfo *fs_info)
+fs_read_super_blocks(FSInfo *fs)
 {
 	char *sb_buffer;
 	SuperBlock *sb1;
 	SuperBlock *sb2;
 
-	if ((sb_buffer = malloc(2*fs_info->block_size)) == 0)
+	if ((sb_buffer = malloc(2*fs->block_size)) == 0)
 	{
 		no_memory("fs_read_super_block");
 		return 0;
 	}
 
-	if (!blkio_read(fs_info->disk->dev_info, sb_buffer, 0, 2*fs_info->block_size))
+	if (!blkio_read(fs->disk->dev, sb_buffer, 0, 2*fs->block_size))
 	{
 		free(sb_buffer);
 		return 0;
 	}
 
 	sb1 = (SuperBlock *)sb_buffer;
-	sb2 = (SuperBlock *)(sb_buffer+fs_info->block_size);
+	sb2 = (SuperBlock *)(sb_buffer+fs->block_size);
 
 	fs_swap_bytes(sb1, sizeof(SuperBlock));
 	fs_swap_bytes(sb2, sizeof(SuperBlock));
@@ -228,7 +228,7 @@ fs_read_super_blocks(FSInfo *fs_info)
 		return 0;
 	}
 
-	if (memcmp(sb1, sb2, fs_info->block_size) != 0)
+	if (memcmp(sb1, sb2, fs->block_size) != 0)
 	{
 		fs_error("super blocks do not match");
 		free(sb_buffer);
@@ -248,16 +248,16 @@ fs_read_super_blocks(FSInfo *fs_info)
 		return 0;
 	}
 
-	fs_info->blocks_per_cluster = be16toh(sb1->sectors_per_cluster);
-	if (fs_info->blocks_per_cluster != fs_info->disk->blocks_per_cluster)
+	fs->blocks_per_cluster = be16toh(sb1->sectors_per_cluster);
+	if (fs->blocks_per_cluster != fs->disk->blocks_per_cluster)
 	{
-		fs_warn("superblock %d blocks per cluster does not match calculated %d blocks per cluster", fs_info->blocks_per_cluster, fs_info->disk->blocks_per_cluster);
+		fs_warn("superblock %d blocks per cluster does not match calculated %d blocks per cluster", fs->blocks_per_cluster, fs->disk->blocks_per_cluster);
 	}
 
-	fs_info->root_dir_cluster = be16toh(sb1->root_dir_cluster);
-	fs_info->used_clusters = be32toh(sb1->used_clusters);
-	fs_info->unused_bytes_in_root = be32toh(sb1->unused_bytes_in_root);
-	fs_info->fat_crc32 = be32toh(sb1->fat_crc32);
+	fs->root_dir_cluster = be16toh(sb1->root_dir_cluster);
+	fs->used_clusters = be32toh(sb1->used_clusters);
+	fs->unused_bytes_in_root = be32toh(sb1->unused_bytes_in_root);
+	fs->fat_crc32 = be32toh(sb1->fat_crc32);
 
 	free(sb_buffer);
 

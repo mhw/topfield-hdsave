@@ -3,7 +3,7 @@
  */
 
 typedef struct {
-	DevInfo *dev_info;
+	DevInfo *dev;
 	int block_size;
 	int blocks_per_cluster;
 } DiskInfo;
@@ -19,7 +19,7 @@ typedef struct {
 } FSInfo;
 
 extern DiskInfo *disk_open(char *path);
-extern void disk_close(DiskInfo *disk_info);
+extern void disk_close(DiskInfo *disk);
 
-extern FSInfo *fs_open_disk(DiskInfo *disk_info);
-extern void fs_close(FSInfo *fs_info);
+extern FSInfo *fs_open_disk(DiskInfo *disk);
+extern void fs_close(FSInfo *fs);
