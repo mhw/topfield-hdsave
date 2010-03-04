@@ -83,7 +83,7 @@ static int fs_blocks_per_cluster(DevInfo *dev);
 static int fs_read_super_blocks(FSInfo *fs);
 static int fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2);
 
-static void
+void
 fs_error(char *fmt, ...)
 {
 	va_list ap;
@@ -93,7 +93,7 @@ fs_error(char *fmt, ...)
 	va_end(ap);
 }
 
-static void
+void
 fs_warn(char *fmt, ...)
 {
 	va_list ap;
@@ -194,19 +194,9 @@ fs_close(FSInfo *fs)
 	 * We don't close the disk here as multiple FSInfo instances
 	 * may refer to the same DiskInfo.
 	 */
+	if (fs->fat)
+		free(fs->fat);
 	free(fs);
-}
-
-static void
-fs_swap_bytes(void *buf, int count)
-{
-	uint32_t *s = (uint32_t *)buf;
-	uint32_t *e = (uint32_t *)(buf+count);
-
-	while (s < e) {
-		*s = bswap_32(*s);
-		s++;
-	}
 }
 
 static int
@@ -222,7 +212,7 @@ fs_read_super_blocks(FSInfo *fs)
 		return 0;
 	}
 
-	if (!blkio_read(fs->disk->dev, sb_buffer, 0, 2*fs->block_size))
+	if (!fs_read(fs, sb_buffer, -1, 0, 2*fs->block_size))
 	{
 		free(sb_buffer);
 		return 0;
@@ -273,7 +263,7 @@ fs_read_super_blocks(FSInfo *fs)
 	{
 		fs_warn("superblock %d blocks per cluster does not match calculated %d blocks per cluster", fs->blocks_per_cluster, fs->disk->blocks_per_cluster);
 	}
-
+	fs->bytes_per_cluster = fs->blocks_per_cluster*fs->block_size;
 	fs->root_dir_cluster = be16toh(sb1->root_dir_cluster);
 	fs->used_clusters = be32toh(sb1->used_clusters);
 	fs->unused_bytes_in_root = be32toh(sb1->unused_bytes_in_root);
@@ -305,25 +295,6 @@ fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2)
 	return 1;
 }
 
-static uint64_t
-fs_blk_offset(FSInfo *fs, int cluster, int cluster_offset)
-{
-	if (cluster < -1)
-	{
-		fatal("fs_blk_offset", "invalid cluster number %d", cluster);
-		return 0;
-	}
-
-	if (cluster_offset < 0
-		|| cluster_offset > fs->blocks_per_cluster*fs->block_size)
-	{
-		fatal("fs_blk_offset", "invalid offset within cluster %d", cluster_offset);
-		return 0;
-	}
-
-	return (cluster+1)*fs->blocks_per_cluster*fs->block_size+cluster_offset;
-}
-
 int
 fs_read_directory(FSInfo *fs, char *path)
 {
@@ -343,7 +314,7 @@ fs_read_directory(FSInfo *fs, char *path)
 		return 0;
 	}
 
-	if (!blkio_read(fs->disk->dev, dir_buffer, fs_blk_offset(fs, fs->root_dir_cluster, 0), bs))
+	if (!fs_read(fs, dir_buffer, fs->root_dir_cluster, 0, bs))
 	{
 		free(dir_buffer);
 		return 0;
@@ -354,8 +325,26 @@ fs_read_directory(FSInfo *fs, char *path)
 	dir_entry = (DirEntry *)dir_buffer;
 
 	while (dir_entry < (DirEntry *)(dir_buffer+bs)) {
-		if (dir_entry->type != 0xff)
-			printf("%s\n", dir_entry->filename);
+		if (dir_entry->type != 0xff) {
+			int start_cluster = be32toh(dir_entry->start_cluster);
+			int clusters = 1; //ignore be32toh(dir_entry->clusters);
+			Cluster *clist;
+			int i;
+
+			printf("%s: start cluster %d\n", dir_entry->filename, start_cluster);
+			clist = fs_fat_chain(fs, start_cluster, clusters);
+
+			if (!clist)
+				return 0;
+
+			for (i = 0; clist[i].cluster >= 0; i++)
+			{
+				if (i > 0)
+					putchar(',');
+				printf("[%" PRId32 ",%" PRId32 "]", clist[i].cluster, clist[i].bytes_used);
+			}
+			putchar('\n');
+		}
 		dir_entry++;
 	}
 

@@ -2,7 +2,7 @@ CFLAGS=-g -I. -I../common -D_FILE_OFFSET_BITS=64
 
 VPATH=.:../common
 
-COMMON=common.o fs.o
+COMMON=common.o fs.o fs_fat.o fs_io.o
 OBJS=tfhd.o $(COMMON) blkio_unix.o common_unix.o
 
 tfhd: $(OBJS)

@@ -105,6 +105,7 @@ info_cmd(int argc, char *argv[])
 	FSInfo *fs;
 	DevInfo *dev;
 	char buf[80];
+	int r;
 
 	if ((disk = disk_open(opts.device_path)) == 0)
 		return 0;
@@ -118,8 +119,8 @@ info_cmd(int argc, char *argv[])
 	printf("Root directory cluster: %d\n", fs->root_dir_cluster);
 	printf("Used clusters: %d\n", fs->used_clusters);
 	printf("Root directory:\n");
-	fs_read_directory(fs, "/");
+	r = fs_read_directory(fs, "/");
 	fs_close(fs);
 	disk_close(disk);
-	return 1;
+	return r;
 }
