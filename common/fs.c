@@ -337,7 +337,7 @@ fs_read_directory(FSInfo *fs, char *path)
 			if (!clist)
 				return 0;
 
-			for (i = 0; clist[i].cluster >= 0; i++)
+			for (i = 0; i < clusters; i++)
 			{
 				if (i > 0)
 					putchar(',');

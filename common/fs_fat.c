@@ -148,13 +148,11 @@ fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count)
 		*cluster_count = num_clusters;
 	}
 
-	if ((clusters = malloc((num_clusters+1)*sizeof(Cluster))) == 0)
+	if ((clusters = malloc((num_clusters)*sizeof(Cluster))) == 0)
 	{
 		no_memory("fs_fat_chain");
 		return 0;
 	}
-
-	clusters[num_clusters].cluster = -1;
 
 	if (fs_fat_each_cluster(fs, start_cluster, num_clusters, fs_fat_record_cluster_fn, clusters) < 0)
 	{
