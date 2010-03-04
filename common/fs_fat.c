@@ -140,7 +140,7 @@ fs_fat_chain(FSInfo *fs, int start_cluster, int expected_num_clusters)
 	if ((num_clusters = fs_fat_each_cluster(fs, start_cluster, expected_num_clusters, 0, 0)) < 0)
 		return 0;
 
-	printf("from cluster %d found %d clusters\n", start_cluster, num_clusters+1);
+	printf("from cluster %d found %d clusters\n", start_cluster, num_clusters);
 
 	if (num_clusters != expected_num_clusters)
 	{
