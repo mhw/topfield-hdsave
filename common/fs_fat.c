@@ -127,7 +127,7 @@ fs_fat_record_cluster_fn(FSInfo *fs, void *arg, int cluster, int index)
 }
 
 Cluster *
-fs_fat_chain(FSInfo *fs, int start_cluster, int expected_num_clusters)
+fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count)
 {
 	Cluster *clusters;
 	int i;
@@ -137,14 +137,15 @@ fs_fat_chain(FSInfo *fs, int start_cluster, int expected_num_clusters)
 	if (!fs->fat && !fs_load_fat(fs))
 		return 0;
 
-	if ((num_clusters = fs_fat_each_cluster(fs, start_cluster, expected_num_clusters, 0, 0)) < 0)
+	if ((num_clusters = fs_fat_each_cluster(fs, start_cluster, *cluster_count, 0, 0)) < 0)
 		return 0;
 
 	printf("from cluster %d found %d clusters\n", start_cluster, num_clusters);
 
-	if (num_clusters != expected_num_clusters)
+	if (num_clusters != *cluster_count)
 	{
-		fs_warn("found %d clusters in chain starting from cluster %d, was expecting %d clusters", num_clusters, start_cluster, expected_num_clusters);
+		fs_warn("found %d clusters in chain starting from cluster %d, was expecting %d clusters", num_clusters, start_cluster, cluster_count);
+		*cluster_count = num_clusters;
 	}
 
 	if ((clusters = malloc((num_clusters+1)*sizeof(Cluster))) == 0)

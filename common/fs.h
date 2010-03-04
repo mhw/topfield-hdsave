@@ -55,7 +55,7 @@ extern int file_close(FileHandle *file);
 
 /* fs_fat.c */
 
-extern Cluster *fs_fat_chain(FSInfo *fs, int start_cluster, int num_clusters);
+extern Cluster *fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count);
 
 /* fs_io.c */
 

@@ -332,7 +332,7 @@ fs_read_directory(FSInfo *fs, char *path)
 			int i;
 
 			printf("%s: start cluster %d\n", dir_entry->filename, start_cluster);
-			clist = fs_fat_chain(fs, start_cluster, clusters);
+			clist = fs_fat_chain(fs, start_cluster, &clusters);
 
 			if (!clist)
 				return 0;
