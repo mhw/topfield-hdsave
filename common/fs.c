@@ -280,8 +280,6 @@ fs_read_directory(FSInfo *fs, char *path)
 		while (dir_entry < (DirEntry *)(dir->buffer+dir->nread)) {
 			switch (dir_entry->type)
 			{
-			case DIR_ENTRY_END:
-				goto end_dir;
 			case DIR_ENTRY_UNUSED:
 				break;
 			case DIR_ENTRY_FILEA:
@@ -296,6 +294,20 @@ fs_read_directory(FSInfo *fs, char *path)
 				{
 					file_close(dir);
 					return 0;
+				}
+
+				/*
+				 * Read the first bit of the file if it needs
+				 * the file size fixing up.
+				 */
+				if (entry->filesize_needs_fixup)
+				{
+					if (!file_read(entry))
+					{
+						file_close(entry);
+						file_close(dir);
+						return 0;
+					}
 				}
 
 				for (i = 0; i < entry->num_clusters; i++)
@@ -317,7 +329,6 @@ fs_read_directory(FSInfo *fs, char *path)
 		}
 	}
 
-end_dir:
 	file_close(dir);
 	return 1;
 }

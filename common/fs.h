@@ -30,6 +30,7 @@ typedef struct {
 	int buffer_size;
 	char *buffer;
 	int nread;
+	int filesize_needs_fixup;
 	uint64_t filesize;
 	uint64_t offset;
 	int num_clusters;
@@ -57,7 +58,7 @@ extern char *file_read(FileHandle *file);
 
 /* fs_fat.c */
 
-extern Cluster *fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count);
+extern Cluster *fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count, uint64_t filesize) ;
 
 /* fs_io.c */
 

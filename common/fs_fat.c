@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <sys/param.h>
 
 #include "port.h"
 #include "common.h"
@@ -114,18 +115,23 @@ fs_fat_each_cluster(FSInfo *fs, int start_cluster, int limit, EachClusterFn fn, 
 	return -1;
 }
 
+static uint64_t fs_fat_remaining_bytes;
+
 static int
 fs_fat_record_cluster_fn(FSInfo *fs, void *arg, int cluster, int index)
 {
 	Cluster *clusters = (Cluster *)arg;
+	int bytes_used;
 
+	bytes_used = MIN(fs->bytes_per_cluster, fs_fat_remaining_bytes);
 	clusters[index].cluster = cluster;
-	clusters[index].bytes_used = fs->bytes_per_cluster;
+	clusters[index].bytes_used = bytes_used;
+	fs_fat_remaining_bytes -= bytes_used;
 	return 1;
 }
 
 Cluster *
-fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count)
+fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count, uint64_t filesize)
 {
 	Cluster *clusters;
 	int i;
@@ -152,6 +158,7 @@ fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count)
 		return 0;
 	}
 
+	fs_fat_remaining_bytes = filesize;
 	if (fs_fat_each_cluster(fs, start_cluster, num_clusters, fs_fat_record_cluster_fn, clusters) < 0)
 	{
 		free(clusters);

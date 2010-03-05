@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <sys/param.h>
 
 #include "port.h"
 #include "common.h"
@@ -14,22 +15,7 @@
 /* Work in units of 'chunks' by default. */
 #define DEFAULT_BUFFER_SIZE 188
 
-static DirEntry file_fake_root_dir_entry = {
-	DIR_ENTRY_SUBDIR,
-	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-	0,
-	1,
-	0,
-	'/', 0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0
-};
+static DirEntry file_fake_root_dir_entry;
 
 static DirEntry *
 file_fake_root(FSInfo *fs)
@@ -39,12 +25,12 @@ file_fake_root(FSInfo *fs)
 
 	if (r->type == 0)
 	{
-		r->type = DIR_ENTRY_SUBDIR;
+		r->type = DIR_ENTRY_ROOT;
 		for (i = 0; i < sizeof(r->mtime); i++)
 			r->mtime[i] = 0xff;
 		r->start_cluster = htobe32(fs->root_dir_cluster);
 		r->clusters = htobe32(1);
-		r->unused_bytes_in_last_cluster = htobe32(0);
+		r->unused_bytes_in_last_cluster = htobe32(fs->unused_bytes_in_root);
 		r->filename[0] = '/';
 	}
 
@@ -57,6 +43,7 @@ file_handle_init(char *where, FSInfo *fs, DirEntry *entry)
 	FileHandle *file;
 	int clusters;
 	int unused;
+	int filesize_needs_fixup;
 
 	if ((file = malloc(sizeof(FileHandle))) == 0)
 	{
@@ -74,20 +61,31 @@ file_handle_init(char *where, FSInfo *fs, DirEntry *entry)
 		free(file);
 		return 0;
 	case DIR_ENTRY_SUBDIR:
-	case DIR_ENTRY_DOT:
 	case DIR_ENTRY_DOT_DOT:
 	case DIR_ENTRY_RECYCLE:
-		file->filesize = fs->bytes_per_cluster;
-		file->num_clusters = 1;
+		clusters = 1;
+		/*
+		 * We can't derive the directory size from these entries
+		 * as the Toppy firmware doesn't update them. We need to
+		 * rely on the '.' entry in the directory itself. For the
+		 * time being, set the file size to the whole cluster.
+		 * We'll fix it when we first read the file.
+		 */
+		unused = 0;
+		filesize_needs_fixup = 1;
 		break;
+	case DIR_ENTRY_DOT:	/* '.' entries have valid sizes */
+	case DIR_ENTRY_ROOT:	/* Our fake entry has valid sizes */
 	case DIR_ENTRY_FILEA:
 	case DIR_ENTRY_FILET:
 		clusters = be32toh(entry->clusters);
 		unused = be32toh(entry->unused_bytes_in_last_cluster);
-		file->filesize = clusters*fs->bytes_per_cluster - unused;
-		file->num_clusters = clusters;
+		filesize_needs_fixup = 0;
 		break;
 	}
+	file->filesize_needs_fixup = filesize_needs_fixup;
+	file->filesize = clusters*fs->bytes_per_cluster - unused;
+	file->num_clusters = clusters;
 	file->offset = 0;
 
 	return file;
@@ -102,7 +100,7 @@ file_open_root(FSInfo *fs)
 	if ((file = file_handle_init("file_open_root", fs, root)) == 0)
 		return 0;
 
-	if ((file->clusters = fs_fat_chain(fs, fs->root_dir_cluster, &file->num_clusters)) == 0)
+	if ((file->clusters = fs_fat_chain(fs, fs->root_dir_cluster, &file->num_clusters, file->filesize)) == 0)
 	{
 		free(file);
 		return 0;
@@ -121,7 +119,7 @@ file_open_dir_entry(FileHandle *dir, DirEntry *entry)
 		return 0;
 
 	start_cluster = be32toh(entry->start_cluster);
-	if ((file->clusters = fs_fat_chain(dir->fs, start_cluster, &file->num_clusters)) == 0)
+	if ((file->clusters = fs_fat_chain(dir->fs, start_cluster, &file->num_clusters, file->filesize)) == 0)
 	{
 		free(file);
 		return 0;
@@ -164,23 +162,40 @@ char *
 file_read(FileHandle *file)
 {
 	char *buffer = file_buffer_alloc(file);
-	int cluster = file->offset / file->fs->bytes_per_cluster;
-	int cluster_offset = file->offset % file->fs->bytes_per_cluster;
-	int bytes = file->buffer_size;
-	int bytes_left = file->filesize-file->offset;
+	int cluster_index;
+	int cluster;
+	int cluster_offset;
+	int bytes;
+	int bytes_left;
 
-	if (bytes_left < bytes)
-		bytes = bytes_left;
+	cluster_index = file->offset / file->fs->bytes_per_cluster;
+	cluster = file->clusters[cluster_index].cluster;
+	cluster_offset = file->offset % file->fs->bytes_per_cluster;
+	bytes = MIN(file->buffer_size, file->filesize-file->offset);
 
 	if (!fs_read(file->fs, buffer, cluster, cluster_offset, bytes))
 	{
 		file->nread = 0;
 		return 0;
 	}
-	else
+
+	if (file->filesize_needs_fixup)
 	{
-		file->nread = bytes;
-		file->offset += bytes;
-		return buffer;
+		DirEntry *dot;
+		int clusters;
+		int unused;
+		int new_size;
+
+		dot = (DirEntry *)buffer;
+		clusters = be32toh(dot->clusters);
+		unused = be32toh(dot->unused_bytes_in_last_cluster);
+		new_size = clusters*file->fs->bytes_per_cluster - unused;
+		file->clusters[file->num_clusters-1].bytes_used -= (file->filesize - new_size);
+		file->filesize = new_size;
+		bytes = MIN(new_size, bytes);
+		file->filesize_needs_fixup = 0;
 	}
+	file->nread = bytes;
+	file->offset += bytes;
+	return buffer;
 }

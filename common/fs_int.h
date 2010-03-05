@@ -46,7 +46,12 @@ typedef struct {
 #define DIR_ENTRY_SUBDIR	0xf2
 #define DIR_ENTRY_RECYCLE	0xf3
 #define DIR_ENTRY_UNUSED	0xff
-#define DIR_ENTRY_END		0x00
+
+/*
+ * Special value for our fake root directory entry. Not used by on-disk
+ * structure.
+ */
+#define DIR_ENTRY_ROOT		0xef
 
 /* fs_file.c */
 
