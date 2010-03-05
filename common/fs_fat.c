@@ -44,8 +44,6 @@ fs_load_fat(FSInfo *fs)
 		return 0;
 	}
 
-	fs_swap_bytes(fs->fat, fat_size);
-
 	return 1;
 }
 

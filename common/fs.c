@@ -185,9 +185,6 @@ fs_read_super_blocks(FSInfo *fs)
 	sb1 = (SuperBlock *)sb_buffer;
 	sb2 = (SuperBlock *)(sb_buffer+fs->block_size);
 
-	fs_swap_bytes(sb1, sizeof(SuperBlock));
-	fs_swap_bytes(sb2, sizeof(SuperBlock));
-
 	if (be32toh(sb1->magic) != FS_MAGIC)
 	{
 		fs_error("super block 1 magic 0x%" PRIx32 " != expected 0x%" PRIx32, be32toh(sb1->magic), FS_MAGIC);
@@ -283,8 +280,6 @@ fs_read_directory(FSInfo *fs, char *path)
 		free(dir_buffer);
 		return 0;
 	}
-
-	fs_swap_bytes(dir_buffer, bs);
 
 	dir_entry = (DirEntry *)dir_buffer;
 

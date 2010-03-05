@@ -21,11 +21,20 @@ fs_read(FSInfo *fs, void *buf, int cluster, int cluster_offset, int bytes)
 		return 0;
 	}
 
+	if (bytes % sizeof(uint32_t) != 0)
+	{
+		fatal("fs_read", "attempt to read %d bytes which isn't a whole number of 32-bit words", bytes);
+		return 0;
+	}
+
 	offset = (cluster+1)*fs->bytes_per_cluster+cluster_offset;
 	if (!blkio_read(fs->disk->dev, buf, offset, bytes))
 	{
 		return 0;
 	}
+
+	fs_swap_bytes(buf, bytes);
+
 	return buf;
 }
 
