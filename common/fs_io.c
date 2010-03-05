@@ -10,14 +10,14 @@ fs_read(FSInfo *fs, void *buf, int cluster, int cluster_offset, int bytes)
 
 	if (cluster < -1)
 	{
-		fatal("fs_blk_offset", "invalid cluster number %d", cluster);
+		fatal("fs_read", "invalid cluster number %d", cluster);
 		return 0;
 	}
 
 	if (cluster_offset < 0
 		|| cluster_offset > fs->bytes_per_cluster)
 	{
-		fatal("fs_blk_offset", "invalid offset within cluster %d", cluster_offset);
+		fatal("fs_read", "invalid offset within cluster %d", cluster_offset);
 		return 0;
 	}
 
