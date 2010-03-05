@@ -13,6 +13,7 @@
 extern void blkio_set_size_override(uint64_t size);
 
 static int info_cmd(int argc, char *argv[]);
+static int ls_cmd(int argc, char *argv[]);
 
 typedef struct {
 	char *device_path;
@@ -33,6 +34,7 @@ usage(void)
 	fputs("\t-s SIZE\t\tSet disk size instead of probing device\n", stderr);
 	fputs("commands:\n", stderr);
 	fputs("\tinfo\t\tPrint basic information about the disk\n", stderr);
+	fputs("\tls\t\tList contents of a directory\n", stderr);
 	exit(EXIT_FAILURE);
 }
 
@@ -82,6 +84,10 @@ main(int argc, char *argv[])
 	{
 		success = info_cmd(argc, argv);
 	}
+	else if (strcmp(opts.command, "ls") == 0)
+	{
+		success = ls_cmd(argc, argv);
+	}
 	else
 	{
 		usage();
@@ -118,8 +124,25 @@ info_cmd(int argc, char *argv[])
 	printf("Filesystem cluster size: %d blocks\n", fs->blocks_per_cluster);
 	printf("Root directory cluster: %d\n", fs->root_dir_cluster);
 	printf("Used clusters: %d\n", fs->used_clusters);
-	printf("Root directory:\n");
+	fs_close(fs);
+	disk_close(disk);
+	return r;
+}
+
+static int
+ls_cmd(int argc, char *argv[])
+{
+	DiskInfo *disk;
+	FSInfo *fs;
+	int r;
+
+	if ((disk = disk_open(opts.device_path)) == 0)
+		return 0;
+	if ((fs = fs_open_disk(disk)) == 0)
+		return 0;
+
 	r = fs_read_directory(fs, "/");
+
 	fs_close(fs);
 	disk_close(disk);
 	return r;
