@@ -42,9 +42,12 @@ Disk Map Structure and Location
 * The disk map should be written into a file in the Topfield filesystem
   when running as a TAP. This would allow the disk map to be copied off
   the device periodically by an attached WL500g or similar device.
-* The disk map file should be overwritten rather than recreated each time.
-  This would allow an older backup of the disk map to provide the location
-  of a more recent disk map on the device itself.
+* The disk map can be found by looking at the first block of each cluster
+  to see if it looks like a disk map file. The time to read the first
+  block of each cluster should be reasonably small.
+* The disk map file should be written to a new file each time to maximise
+  the number of clusters that will contain a copy of the disk map from
+  some point in time.
 * The disk map could also be written to the last sectors of the disk if
   these sectors are unused, on the basis that they are likely to remain
   unused and will be easy to find after a disk structure failure.
