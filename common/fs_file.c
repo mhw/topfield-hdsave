@@ -160,13 +160,6 @@ file_buffer_free(FileHandle *file)
 	file->buffer = 0;
 }
 
-void
-file_set_buffer_size(FileHandle *file, int buffer_size)
-{
-	file_buffer_free(file);
-	file->buffer_size = buffer_size;
-}
-
 char *
 file_read(FileHandle *file)
 {

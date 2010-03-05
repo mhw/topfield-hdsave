@@ -53,7 +53,6 @@ extern int fs_read_directory(FSInfo *fs, char *path);
 extern FileHandle *file_open_root(FSInfo *fs);
 extern FileHandle *file_open(FSInfo *fs, FileHandle *dir, char *filename);
 extern void file_close(FileHandle *file);
-extern void file_set_buffer_size(FileHandle *file, int buffer_size);
 extern char *file_read(FileHandle *file);
 
 /* fs_fat.c */
