@@ -29,6 +29,7 @@ typedef struct {
 	FSInfo *fs;
 	int buffer_size;
 	char *buffer;
+	int nread;
 	uint64_t filesize;
 	uint64_t offset;
 	int num_clusters;
@@ -47,11 +48,13 @@ extern FSInfo *fs_open_disk(DiskInfo *disk);
 extern void fs_close(FSInfo *fs);
 extern int fs_read_directory(FSInfo *fs, char *path);
 
-extern FileHandle file_open(FSInfo *fs, FileHandle *dir, char *filename);
+/* fs_file.c */
+
+extern FileHandle *file_open_root(FSInfo *fs);
+extern FileHandle *file_open(FSInfo *fs, FileHandle *dir, char *filename);
+extern void file_close(FileHandle *file);
 extern void file_set_buffer_size(FileHandle *file, int buffer_size);
 extern char *file_read(FileHandle *file);
-extern void file_seek(FileHandle *file, uint64_t offset);
-extern int file_close(FileHandle *file);
 
 /* fs_fat.c */
 

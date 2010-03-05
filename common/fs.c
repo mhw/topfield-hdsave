@@ -259,9 +259,10 @@ fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2)
 int
 fs_read_directory(FSInfo *fs, char *path)
 {
-	char *dir_buffer;
-	int bs = 188*512;
+	FileHandle *dir;
+	FileHandle *entry;
 	DirEntry *dir_entry;
+	int i;
 
 	if (strcmp("/", path) != 0)
 	{
@@ -269,44 +270,54 @@ fs_read_directory(FSInfo *fs, char *path)
 		return 0;
 	}
 
-	if ((dir_buffer = malloc(188*512)) == 0)
-	{
-		no_memory("fs_read_directory");
+	if ((dir = file_open_root(fs)) == 0)
 		return 0;
-	}
 
-	if (!fs_read(fs, dir_buffer, fs->root_dir_cluster, 0, bs))
+	while (file_read(dir) > 0)
 	{
-		free(dir_buffer);
-		return 0;
-	}
+		dir_entry = (DirEntry *)dir->buffer;
 
-	dir_entry = (DirEntry *)dir_buffer;
-
-	while (dir_entry < (DirEntry *)(dir_buffer+bs)) {
-		if (dir_entry->type != 0xff) {
-			int start_cluster = be32toh(dir_entry->start_cluster);
-			int clusters = 1; //ignore be32toh(dir_entry->clusters);
-			Cluster *clist;
-			int i;
-
-			printf("%s: start cluster %d\n", dir_entry->filename, start_cluster);
-			clist = fs_fat_chain(fs, start_cluster, &clusters);
-
-			if (!clist)
-				return 0;
-
-			for (i = 0; i < clusters; i++)
+		while (dir_entry < (DirEntry *)(dir->buffer+dir->nread)) {
+			switch (dir_entry->type)
 			{
-				if (i > 0)
-					putchar(',');
-				printf("[%" PRId32 ",%" PRId32 "]", clist[i].cluster, clist[i].bytes_used);
+			case DIR_ENTRY_END:
+				goto end_dir;
+			case DIR_ENTRY_UNUSED:
+				break;
+			case DIR_ENTRY_FILEA:
+			case DIR_ENTRY_FILET:
+			case DIR_ENTRY_DOT_DOT:
+			case DIR_ENTRY_DOT:
+			case DIR_ENTRY_SUBDIR:
+			case DIR_ENTRY_RECYCLE:
+				printf("%s ", dir_entry->filename);
+
+				if ((entry = file_open_dir_entry(dir, dir_entry)) == 0)
+				{
+					file_close(dir);
+					return 0;
+				}
+
+				for (i = 0; i < entry->num_clusters; i++)
+				{
+					if (i > 0)
+						putchar(',');
+					printf("[%" PRId32 ",%" PRId32 "]", entry->clusters[i].cluster, entry->clusters[i].bytes_used);
+				}
+				putchar('\n');
+
+				file_close(entry);
+				break;
+			default:
+				fs_error("unrecognised directory entry type %d", dir_entry->type);
+				file_close(dir);
+				return 0;
 			}
-			putchar('\n');
+			dir_entry++;
 		}
-		dir_entry++;
 	}
 
-	free(dir_buffer);
+end_dir:
+	file_close(dir);
 	return 1;
 }
