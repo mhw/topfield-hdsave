@@ -87,14 +87,14 @@ fs_fat_each_cluster(FSInfo *fs, int start_cluster, int limit, EachClusterFn fn, 
 	cluster = start_cluster;
 	i = 0;
 	while (i < limit) {
-printf("cluster %d: %d\n", i, cluster);
+// printf("cluster %d: %d\n", i, cluster);
 		if (fn && !fn(fs, arg, cluster, i))
 			return 0;
 		next_cluster = fs_fat_entry(fs, cluster);
-printf("raw next cluster %d (0x%x)\n", next_cluster, next_cluster);
+// printf("raw next cluster %d (0x%x)\n", next_cluster, next_cluster);
 		marked = FAT_CLUSTER_IS_MARKED(next_cluster);
 		next_cluster = FAT_CLUSTER_UNMARKED(next_cluster);
-printf("next cluster %d (0x%x)%s\n", next_cluster, next_cluster, marked? " marked" : "");
+// printf("next cluster %d (0x%x)%s\n", next_cluster, next_cluster, marked? " marked" : "");
 		if (next_cluster == FAT_FREE)
 		{
 			fs_error("free cluster found in cluster chain");
@@ -138,7 +138,7 @@ fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count)
 	if ((num_clusters = fs_fat_each_cluster(fs, start_cluster, *cluster_count, 0, 0)) < 0)
 		return 0;
 
-	printf("from cluster %d found %d clusters\n", start_cluster, num_clusters);
+// printf("from cluster %d found %d clusters\n", start_cluster, num_clusters);
 
 	if (num_clusters != *cluster_count)
 	{
