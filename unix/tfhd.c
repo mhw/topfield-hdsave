@@ -4,6 +4,9 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "port.h"
 #include "common.h"
@@ -14,6 +17,7 @@ extern void blkio_set_size_override(uint64_t size);
 
 static int info_cmd(int argc, char *argv[]);
 static int ls_cmd(int argc, char *argv[]);
+static int cp_cmd(int argc, char *argv[]);
 
 typedef struct {
 	char *device_path;
@@ -34,7 +38,8 @@ usage(void)
 	fputs("\t-s SIZE\t\tSet disk size instead of probing device\n", stderr);
 	fputs("commands:\n", stderr);
 	fputs("\tinfo\t\tPrint basic information about the disk\n", stderr);
-	fputs("\tls\t\tList contents of a directory\n", stderr);
+	fputs("\tls [dir]\tList contents of a directory\n", stderr);
+	fputs("\tcp <src> <dst>\tCopy contents of a file to host filesystem\n", stderr);
 	exit(EXIT_FAILURE);
 }
 
@@ -90,6 +95,10 @@ main(int argc, char *argv[])
 	else if (strcmp(opts.command, "ls") == 0)
 	{
 		success = ls_cmd(argc, argv);
+	}
+	else if (strcmp(opts.command, "cp") == 0)
+	{
+		success = cp_cmd(argc, argv);
 	}
 	else
 	{
@@ -153,4 +162,46 @@ ls_cmd(int argc, char *argv[])
 	fs_close(fs);
 	disk_close(disk);
 	return r;
+}
+
+static int
+cp_cmd(int argc, char *argv[])
+{
+	DiskInfo *disk;
+	FSInfo *fs;
+	FileHandle *file;
+	int fd;
+
+	if ((disk = disk_open(opts.device_path)) == 0)
+		return 0;
+	if ((fs = fs_open_disk(disk)) == 0)
+		return 0;
+
+	if ((file = file_open_pathname(fs, 0, argv[1])) == 0)
+		return 0;
+	if ((fd = open(argv[2], O_WRONLY|O_CREAT, 0666)) == -1)
+	{
+		sys_error("cp", "could not open '%s' for writing", argv[2]);
+		return 0;
+	}
+
+	while (file_read(file) > 0)
+	{
+		if (write(fd, file->buffer, file->nread) == -1)
+		{
+			sys_error("cp", "could not write to '%s'", argv[2]);
+			file_close(file);
+			return 0;
+		}
+	}
+
+	if (close(fd) == -1)
+	{
+		sys_error("cp", "could not write to '%s'", argv[2]);
+		file_close(file);
+		return 0;
+	}
+	fs_close(fs);
+	disk_close(disk);
+	return 1;
 }
