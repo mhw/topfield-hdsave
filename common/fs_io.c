@@ -28,7 +28,7 @@ fs_read(FSInfo *fs, void *buf, int cluster, int cluster_offset, int bytes)
 	}
 
 	offset = (cluster+1)*fs->bytes_per_cluster+cluster_offset;
-	if (!blkio_read(fs->disk->dev, buf, offset, bytes))
+	if (blkio_read(fs->disk->dev, buf, offset, bytes) == -1)
 	{
 		return 0;
 	}
