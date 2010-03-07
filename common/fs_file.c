@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <sys/param.h>
 
 #include "port.h"
@@ -136,6 +137,56 @@ file_open(FileHandle *dir, char *filename)
 	if ((entry = fs_dir_find(dir, filename)) == 0)
 		return 0;
 	return file_open_dir_entry(dir, entry);
+}
+
+FileHandle *
+file_open_pathname(FSInfo *fs, FileHandle *dir, char *pathname)
+{
+	FileHandle *cur;
+	char *s;
+	char *e;
+	int need_close = 0;
+
+	if (dir)
+	{
+		cur = dir;
+	}
+	else
+	{
+		cur = file_open_root(fs);
+		need_close = 1;
+	}
+
+	s = pathname;
+	for (;;)
+	{
+		FileHandle *next;
+
+		while (*s == '/')
+			s++;
+		if (!*s)
+			break;
+		e = strchr(s, '/');
+		if (e)
+			*e = 0;
+		if ((next = file_open(cur, s)) == 0)
+		{
+			fs_warn("could not find '%s'", s);
+			if (need_close)
+				file_close(cur);
+			return 0;
+		}
+		if (need_close)
+			file_close(cur);
+		cur = next;
+		need_close = 1;
+		if (e)
+			*e = '/';
+		else
+			break;
+		s = e+1;
+	}
+	return cur;
 }
 
 void

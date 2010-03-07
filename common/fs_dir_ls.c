@@ -14,16 +14,12 @@
 int
 fs_dir_ls(FSInfo *fs, char *path)
 {
-	FileHandle *root;
 	FileHandle *dir;
 	FileHandle *entry;
 	DirEntry *dir_entry;
 	int i;
 
-	if ((root = file_open_root(fs)) == 0)
-		return 0;
-
-	if ((dir = file_open(root, "ProgramFiles")) == 0)
+	if ((dir = file_open_pathname(fs, 0, path)) == 0)
 		return 0;
 
 	while (file_read(dir) > 0)

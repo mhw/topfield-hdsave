@@ -70,9 +70,12 @@ parse_options(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
+	int parsed;
 	int success;
 
-	argc = parse_options(argc, argv);
+	parsed = parse_options(argc, argv);
+	argc -= parsed;
+	argv += parsed;
 
 	if (opts.size_override)
 	{
@@ -142,7 +145,10 @@ ls_cmd(int argc, char *argv[])
 	if ((fs = fs_open_disk(disk)) == 0)
 		return 0;
 
-	r = fs_dir_ls(fs, "/");
+	if (argc == 1)
+		r = fs_dir_ls(fs, "/");
+	else
+		r = fs_dir_ls(fs, argv[1]);
 
 	fs_close(fs);
 	disk_close(disk);

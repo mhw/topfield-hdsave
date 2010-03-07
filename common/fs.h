@@ -98,6 +98,7 @@ extern int fs_dir_ls(FSInfo *fs, char *path);
 extern FileHandle *file_open_root(FSInfo *fs);
 extern FileHandle *file_open_dir_entry(FileHandle *dir, DirEntry *entry);
 extern FileHandle *file_open(FileHandle *dir, char *filename);
+extern FileHandle *file_open_pathname(FSInfo *fs, FileHandle *dir, char *pathname);
 extern void file_close(FileHandle *file);
 extern char *file_read(FileHandle *file);
 
