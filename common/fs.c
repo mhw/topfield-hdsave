@@ -259,6 +259,7 @@ fs_check_hd_identifier(SuperBlock *sb1, SuperBlock *sb2)
 int
 fs_read_directory(FSInfo *fs, char *path)
 {
+	FileHandle *root;
 	FileHandle *dir;
 	FileHandle *entry;
 	DirEntry *dir_entry;
@@ -270,7 +271,10 @@ fs_read_directory(FSInfo *fs, char *path)
 		return 0;
 	}
 
-	if ((dir = file_open_root(fs)) == 0)
+	if ((root = file_open_root(fs)) == 0)
+		return 0;
+
+	if ((dir = file_open(root, "DataFiles")) == 0)
 		return 0;
 
 	while (file_read(dir) > 0)

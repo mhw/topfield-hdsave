@@ -37,6 +37,40 @@ typedef struct {
 	Cluster *clusters;
 } FileHandle;
 
+typedef struct {
+	uint8_t type;
+	char mtime[7];
+	uint32_t start_cluster;
+	uint32_t clusters;
+	uint32_t unused_bytes_in_last_cluster;
+	char filename[64];
+	char service_name[31];
+	char unused1;
+	uint32_t attributes;
+	uint16_t flags;
+	char unused2[2];
+	uint8_t unused3;
+	uint8_t s3_crc;
+	uint16_t bytes_in_last_block;
+} DirEntry;
+
+/*
+ * Values for DirEntry.type
+ */
+#define DIR_ENTRY_FILEA		0xd0
+#define DIR_ENTRY_FILET		0xd1
+#define DIR_ENTRY_DOT_DOT	0xf0
+#define DIR_ENTRY_DOT		0xf1
+#define DIR_ENTRY_SUBDIR	0xf2
+#define DIR_ENTRY_RECYCLE	0xf3
+#define DIR_ENTRY_UNUSED	0xff
+
+/*
+ * Special value for our fake root directory entry. Not used by on-disk
+ * structure.
+ */
+#define DIR_ENTRY_ROOT		0xef
+
 /* fs.c */
 
 extern void fs_error(char *fmt, ...);
@@ -49,10 +83,18 @@ extern FSInfo *fs_open_disk(DiskInfo *disk);
 extern void fs_close(FSInfo *fs);
 extern int fs_read_directory(FSInfo *fs, char *path);
 
+/* fs_dir.c */
+
+typedef int (*EachDirEntryFn)(FSInfo *fs, void *arg, DirEntry *entry, int index);
+
+extern DirEntry *fs_dir_each_entry(FileHandle *dir, EachDirEntryFn fn, void *arg);
+extern DirEntry *fs_dir_find(FileHandle *dir, char *filename);
+
 /* fs_file.c */
 
 extern FileHandle *file_open_root(FSInfo *fs);
-extern FileHandle *file_open(FSInfo *fs, FileHandle *dir, char *filename);
+extern FileHandle *file_open_dir_entry(FileHandle *dir, DirEntry *entry);
+extern FileHandle *file_open(FileHandle *dir, char *filename);
 extern void file_close(FileHandle *file);
 extern char *file_read(FileHandle *file);
 

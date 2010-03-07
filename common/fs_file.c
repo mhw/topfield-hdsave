@@ -128,6 +128,16 @@ file_open_dir_entry(FileHandle *dir, DirEntry *entry)
 	return file;
 }
 
+FileHandle *
+file_open(FileHandle *dir, char *filename)
+{
+	DirEntry *entry;
+
+	if ((entry = fs_dir_find(dir, filename)) == 0)
+		return 0;
+	return file_open_dir_entry(dir, entry);
+}
+
 void
 file_close(FileHandle *file)
 {
