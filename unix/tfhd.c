@@ -179,7 +179,7 @@ cp_cmd(int argc, char *argv[])
 
 	if ((file = file_open_pathname(fs, 0, argv[1])) == 0)
 		return 0;
-	if ((fd = open(argv[2], O_WRONLY|O_CREAT, 0666)) == -1)
+	if ((fd = creat(argv[2], 0666)) == -1)
 	{
 		sys_error("cp", "could not open '%s' for writing", argv[2]);
 		return 0;
