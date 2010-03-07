@@ -81,7 +81,6 @@ extern void disk_close(DiskInfo *disk);
 
 extern FSInfo *fs_open_disk(DiskInfo *disk);
 extern void fs_close(FSInfo *fs);
-extern int fs_read_directory(FSInfo *fs, char *path);
 
 /* fs_dir.c */
 
@@ -89,6 +88,10 @@ typedef int (*EachDirEntryFn)(FSInfo *fs, void *arg, DirEntry *entry, int index)
 
 extern DirEntry *fs_dir_each_entry(FileHandle *dir, EachDirEntryFn fn, void *arg);
 extern DirEntry *fs_dir_find(FileHandle *dir, char *filename);
+
+/* fs_dir_ls.c */
+
+extern int fs_dir_ls(FSInfo *fs, char *path);
 
 /* fs_file.c */
 

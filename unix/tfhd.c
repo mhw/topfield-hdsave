@@ -142,7 +142,7 @@ ls_cmd(int argc, char *argv[])
 	if ((fs = fs_open_disk(disk)) == 0)
 		return 0;
 
-	r = fs_read_directory(fs, "/");
+	r = fs_dir_ls(fs, "/");
 
 	fs_close(fs);
 	disk_close(disk);
