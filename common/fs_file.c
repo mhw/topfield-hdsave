@@ -81,6 +81,8 @@ file_handle_init(char *where, FSInfo *fs, DirEntry *entry)
 	case DIR_ENTRY_FILET:
 		clusters = be32toh(entry->clusters);
 		unused = be32toh(entry->unused_bytes_in_last_cluster);
+		if (entry->s3_crc)
+			unused = unused+512-be16toh(entry->bytes_in_last_block);
 		filesize_needs_fixup = 0;
 		break;
 	}
@@ -227,6 +229,7 @@ file_read(FileHandle *file)
 	int cluster;
 	int cluster_offset;
 	int bytes;
+	int bytes_to_read;
 	int bytes_left;
 
 	if (file->offset >= file->filesize)
@@ -236,8 +239,9 @@ file_read(FileHandle *file)
 	cluster = file->clusters[cluster_index].cluster;
 	cluster_offset = file->offset % file->fs->bytes_per_cluster;
 	bytes = MIN(file->buffer_size, file->filesize-file->offset);
+	bytes_to_read = (bytes+3) & ~0x3;
 
-	if (!fs_read(file->fs, buffer, cluster, cluster_offset, bytes))
+	if (!fs_read(file->fs, buffer, cluster, cluster_offset, bytes_to_read))
 	{
 		file->nread = 0;
 		return 0;
