@@ -178,6 +178,9 @@ file_read(FileHandle *file)
 	int bytes;
 	int bytes_left;
 
+	if (file->offset >= file->filesize)
+		return 0;
+
 	cluster_index = file->offset / file->fs->bytes_per_cluster;
 	cluster = file->clusters[cluster_index].cluster;
 	cluster_offset = file->offset % file->fs->bytes_per_cluster;
