@@ -77,6 +77,10 @@ typedef int (*EachClusterFn)(FSInfo *fs, void *arg, int cluster, int index);
 
 static int fs_fat_marking_clusters = 0;
 
+/*
+ * TODO: could mark each cluster as we visit it to detect loops in the
+ * FAT more accurately.
+ */
 static int
 fs_fat_each_cluster(FSInfo *fs, int start_cluster, EachClusterFn fn, void *arg)
 {
