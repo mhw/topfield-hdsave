@@ -91,7 +91,7 @@ extern DirEntry *fs_dir_find(FileHandle *dir, char *filename);
 
 /* fs_dir_ls.c */
 
-extern int fs_dir_ls(FSInfo *fs, char *path);
+extern int fs_dir_ls(FSInfo *fs, char *path, int opt_long);
 
 /* fs_file.c */
 

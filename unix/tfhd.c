@@ -15,6 +15,8 @@
 
 extern void blkio_set_size_override(uint64_t size);
 
+typedef int (*CommandFn)(int argc, char *argv[]);
+
 static int info_cmd(int argc, char *argv[]);
 static int ls_cmd(int argc, char *argv[]);
 static int cp_cmd(int argc, char *argv[]);
@@ -23,10 +25,21 @@ typedef struct {
 	char *device_path;
 	char *disk_map;
 	char *size_override;
-	char *command;
+	CommandFn command_fn;
 } Options;
 
 static Options opts;
+
+typedef struct {
+        char *name;
+        CommandFn fn;
+} Command;
+
+static Command commands[] = {
+        { "info", info_cmd },
+        { "ls", ls_cmd },
+        { "cp", cp_cmd },
+};
 
 static void
 usage(void)
@@ -47,6 +60,7 @@ static int
 parse_options(int argc, char *argv[])
 {
 	int opt;
+	int i;
 
 	while ((opt = getopt(argc, argv, "f:m:s:")) != -1)
 	{
@@ -68,15 +82,27 @@ parse_options(int argc, char *argv[])
 
 	if (optind >= argc)
 		usage();
-	opts.command = argv[optind];
-	return optind;
+	for (i = 0; i < elementsof(commands); i++)
+	{
+	        if (strcmp(commands[i].name, argv[optind]) == 0)
+	        {
+	                opts.command_fn = commands[i].fn;
+	                break;
+	        }
+	}
+	i = optind;
+	optind = 1;     /* reset getopt so commands can also call it */
+	return i;
 }
+
+static DiskInfo *disk;
+static FSInfo *fs;
 
 int
 main(int argc, char *argv[])
 {
 	int parsed;
-	int success;
+	int success = 1;
 
 	parsed = parse_options(argc, argv);
 	argc -= parsed;
@@ -88,17 +114,18 @@ main(int argc, char *argv[])
 		blkio_set_size_override(size);
 	}
 
-	if (strcmp(opts.command, "info") == 0)
+	if (opts.command_fn)
 	{
-		success = info_cmd(argc, argv);
-	}
-	else if (strcmp(opts.command, "ls") == 0)
-	{
-		success = ls_cmd(argc, argv);
-	}
-	else if (strcmp(opts.command, "cp") == 0)
-	{
-		success = cp_cmd(argc, argv);
+		if ((disk = disk_open(opts.device_path)) == 0)
+		        success = 0;
+		if (success && (fs = fs_open_disk(disk)) == 0)
+		        success = 0;
+		if (success)
+			success = opts.command_fn(argc, argv);
+		if (fs)
+			fs_close(fs);
+		if (disk)
+			disk_close(disk);
 	}
 	else
 	{
@@ -117,18 +144,11 @@ main(int argc, char *argv[])
 }
 
 static int
-info_cmd(int argc, char *argv[])
+info_cmd(int argc, char *arg[])
 {
-	DiskInfo *disk;
-	FSInfo *fs;
 	DevInfo *dev;
 	char buf[80];
 	int r;
-
-	if ((disk = disk_open(opts.device_path)) == 0)
-		return 0;
-	if ((fs = fs_open_disk(disk)) == 0)
-		return 0;
 
 	dev = fs->disk->dev;
 	blkio_describe(dev, buf, sizeof(buf));
@@ -137,45 +157,41 @@ info_cmd(int argc, char *argv[])
 	printf("Root directory cluster: %d\n", fs->root_dir_cluster);
 	printf("Used clusters: %d\n", fs->used_clusters);
 	printf("Unused bytes in root: %d\n", fs->unused_bytes_in_root);
-	fs_close(fs);
-	disk_close(disk);
 	return r;
 }
 
 static int
 ls_cmd(int argc, char *argv[])
 {
-	DiskInfo *disk;
-	FSInfo *fs;
 	int r;
+	int opt;
+	int opt_long;
 
-	if ((disk = disk_open(opts.device_path)) == 0)
-		return 0;
-	if ((fs = fs_open_disk(disk)) == 0)
-		return 0;
+	while ((opt = getopt(argc, argv, "l")) != -1)
+	{
+		switch (opt)
+		{
+		case 'l':
+			opt_long = 1;
+			break;
+		default:
+			fprintf(stderr, "usage: ls [-l] [dir]\n");
+			return 1;
+		}
+	}
 
-	if (argc == 1)
-		r = fs_dir_ls(fs, "/");
+	if (optind == argc)
+		r = fs_dir_ls(fs, "/", opt_long);
 	else
-		r = fs_dir_ls(fs, argv[1]);
-
-	fs_close(fs);
-	disk_close(disk);
+		r = fs_dir_ls(fs, argv[optind], opt_long);
 	return r;
 }
 
 static int
 cp_cmd(int argc, char *argv[])
 {
-	DiskInfo *disk;
-	FSInfo *fs;
 	FileHandle *file;
 	int fd;
-
-	if ((disk = disk_open(opts.device_path)) == 0)
-		return 0;
-	if ((fs = fs_open_disk(disk)) == 0)
-		return 0;
 
 	if ((file = file_open_pathname(fs, 0, argv[1])) == 0)
 		return 0;
@@ -201,7 +217,5 @@ cp_cmd(int argc, char *argv[])
 		file_close(file);
 		return 0;
 	}
-	fs_close(fs);
-	disk_close(disk);
 	return 1;
 }

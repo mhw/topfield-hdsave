@@ -12,7 +12,7 @@
 #include "fs_int.h"
 
 int
-fs_dir_ls(FSInfo *fs, char *path)
+fs_dir_ls(FSInfo *fs, char *path, int opt_long)
 {
 	FileHandle *dir;
 	FileHandle *entry;
