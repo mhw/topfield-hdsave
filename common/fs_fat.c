@@ -78,7 +78,7 @@ typedef int (*EachClusterFn)(FSInfo *fs, void *arg, int cluster, int index);
 static int fs_fat_marking_clusters = 0;
 
 static int
-fs_fat_each_cluster(FSInfo *fs, int start_cluster, int limit, EachClusterFn fn, void *arg)
+fs_fat_each_cluster(FSInfo *fs, int start_cluster, EachClusterFn fn, void *arg)
 {
 	int cluster;
 	int i;
@@ -87,7 +87,7 @@ fs_fat_each_cluster(FSInfo *fs, int start_cluster, int limit, EachClusterFn fn, 
 
 	cluster = start_cluster;
 	i = 0;
-	while (i < limit) {
+	while (i < 131072) {
 // printf("cluster %d: %d\n", i, cluster);
 		if (fn && !fn(fs, arg, cluster, i))
 			return 0;
@@ -111,7 +111,7 @@ fs_fat_each_cluster(FSInfo *fs, int start_cluster, int limit, EachClusterFn fn, 
 		cluster = next_cluster;
 		i++;
 	}
-	fs_error("more than %d clusters in chain starting with cluster %d", limit, start_cluster);
+	fs_error("more than 131072 clusters in chain starting with cluster %d: loop in FAT?", start_cluster);
 	return -1;
 }
 
@@ -141,7 +141,7 @@ fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count, uint64_t filesiz
 	if (!fs->fat && !fs_load_fat(fs))
 		return 0;
 
-	if ((num_clusters = fs_fat_each_cluster(fs, start_cluster, *cluster_count, 0, 0)) < 0)
+	if ((num_clusters = fs_fat_each_cluster(fs, start_cluster, 0, 0)) < 0)
 		return 0;
 
 // printf("from cluster %d found %d clusters\n", start_cluster, num_clusters);
@@ -159,7 +159,7 @@ fs_fat_chain(FSInfo *fs, int start_cluster, int *cluster_count, uint64_t filesiz
 	}
 
 	fs_fat_remaining_bytes = filesize;
-	if (fs_fat_each_cluster(fs, start_cluster, num_clusters, fs_fat_record_cluster_fn, clusters) < 0)
+	if (fs_fat_each_cluster(fs, start_cluster, fs_fat_record_cluster_fn, clusters) < 0)
 	{
 		free(clusters);
 		return 0;
