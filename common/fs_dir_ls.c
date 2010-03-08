@@ -27,17 +27,25 @@ fs_dir_ls(FSInfo *fs, char *path, int opt_long)
 		dir_entry = (DirEntry *)dir->buffer;
 
 		while (dir_entry < (DirEntry *)(dir->buffer+dir->nread)) {
+		        int is_dir = 1;
+
 			switch (dir_entry->type)
 			{
 			case DIR_ENTRY_UNUSED:
+			case DIR_ENTRY_DOT_DOT:
+			case DIR_ENTRY_DOT:
 				break;
 			case DIR_ENTRY_FILEA:
 			case DIR_ENTRY_FILET:
-			case DIR_ENTRY_DOT_DOT:
-			case DIR_ENTRY_DOT:
+			        is_dir = 0;
+			        /* fall through */
 			case DIR_ENTRY_SUBDIR:
 			case DIR_ENTRY_RECYCLE:
-				printf("%s ", dir_entry->filename);
+			        if (!opt_long)
+			        {
+					printf("%s%s\n", dir_entry->filename, is_dir? "/" : "");
+					break;
+				}
 
 				if ((entry = file_open_dir_entry(dir, dir_entry)) == 0)
 				{
@@ -59,13 +67,9 @@ fs_dir_ls(FSInfo *fs, char *path, int opt_long)
 					}
 				}
 
-				for (i = 0; i < entry->num_clusters; i++)
-				{
-					if (i > 0)
-						putchar(',');
-					printf("[%" PRId32 ",%" PRId32 "]", entry->clusters[i].cluster, entry->clusters[i].bytes_used);
-				}
-				putchar('\n');
+				printf("%s %10s %s\n", is_dir? "d" : "-",
+						format_disk_size(entry->filesize),
+						dir_entry->filename);
 
 				file_close(entry);
 				break;
