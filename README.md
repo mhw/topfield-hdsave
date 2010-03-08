@@ -20,8 +20,9 @@ Current State
 HDSave is still in development and should be considered alpha quality.
 The raw device is opened read-only, so it should currently not be possible
 for tfhd to alter the disk's contents. Your mileage may vary though.
-The Unix command line program is able to read the super block and root
-directory of a Topfield hard disk. Work on the TAP has not yet started.
+The Unix command line program is able to list the contents of directories
+and copy files from the Topfield hard disc to the host filesystem.
+Work on the TAP has not yet started.
 
 Some Implementation Thoughts
 ----------------------------
