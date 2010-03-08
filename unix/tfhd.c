@@ -62,7 +62,7 @@ parse_options(int argc, char *argv[])
 	int opt;
 	int i;
 
-	while ((opt = getopt(argc, argv, "f:m:s:")) != -1)
+	while ((opt = getopt(argc, argv, "+f:m:s:")) != -1)
 	{
 		switch (opt)
 		{
@@ -91,7 +91,7 @@ parse_options(int argc, char *argv[])
 	        }
 	}
 	i = optind;
-	optind = 1;     /* reset getopt so commands can also call it */
+	optind = 0;     /* reset getopt so commands can also call it */
 	return i;
 }
 
