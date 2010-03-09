@@ -97,6 +97,69 @@ like this:
 Note that you need to quote spaces in filenames to prevent the shell
 from splitting them into separate arguments.
 
+You can create a 'disk map' file, which records the filenames of all
+files and directories on the disk, along with the position and size of
+all the clusters that each file is stored in. The command to do this
+is:
+
+    $ ./tfhd -f /dev/sdb map disk.map
+    $
+
+`disk.map` will contain the disk map. The disk map is plain text so you
+can look at it with a text editor.
+
+Sparse Clones
+-------------
+
+It is also possible to create a 'sparse clone' of the disk: this is a
+file in the host filesystem which contains only the blocks of data that
+`tfhd` has actually read from the Topfield disk during a run. The sparse
+clone can then be used in place of the original disk, as long as the
+commands being executed are a subset of those originally cloned. For
+example:
+
+    $ ./tfhd -f /dev/sdb -c disk.img info
+    /dev/sdb: 160.042G device - 312581808 * 512 byte blocks
+    [...]
+    $ ls -lh disk.img
+    -rw-r--r-- 1 mhw mhw 1.0K 2010-03-09 17:13 disk.img
+    $
+
+So at this point `disk.img` contains 1k of data, those being the two
+superblocks from the start of the disk that the *info* command reads.
+
+    $ ./tfhd -f /dev/sdb -c disk.img map disk.map
+    $ ls -lh disk.img
+    -rw-r--r-- 1 mhw mhw 131G 2010-03-09 17:13 disk.img
+    $ du -h disk.img
+    3.2M    disk.img
+    $
+
+`disk.img` is now a 131Gb file that only occupies 3.2Mb of actual disk
+space because most of the blocks have never been written to.
+
+    $ ./tfhd -f disk.img ls
+    warning: superblock 2444 blocks per cluster does not match calculated 2256 blocks per cluster
+    __RECYCLE__/
+    DataFiles/
+    ProgramFiles/
+    MP3/
+    $
+
+We can now run commands against the sparse clone. The warning message
+appears because the physical size of the sparse clone does not match the
+size of the raw disk, and hence the calculated number of blocks per
+cluster is lower than it should be. You could silence the message by
+using the `-s` option to override the disk size:
+
+    $ ./tfhd -f disk.img -s 160G ls
+    forcing device size to be 160G
+    __RECYCLE__/
+    DataFiles/
+    ProgramFiles/
+    MP3/
+    $
+
 Future Plans
 ------------
 
