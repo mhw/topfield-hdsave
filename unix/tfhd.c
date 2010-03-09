@@ -198,7 +198,7 @@ ls_cmd(int argc, char *argv[])
 {
 	int r;
 	int opt;
-	int opt_long;
+	int opt_long = 0;
 
 	while ((opt = getopt(argc, argv, "l")) != -1)
 	{
