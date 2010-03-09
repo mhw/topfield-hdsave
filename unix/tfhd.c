@@ -30,6 +30,8 @@
 #include "blkio.h"
 #include "fs.h"
 
+#include "blkio_unix.h"
+
 extern void blkio_set_size_override(uint64_t size);
 
 typedef int (*CommandFn)(int argc, char *argv[]);
@@ -43,6 +45,7 @@ typedef struct {
 	char *device_path;
 	char *disk_map;
 	char *size_override;
+	char *sparse_clone;
 	CommandFn command_fn;
 } Options;
 
@@ -68,6 +71,7 @@ usage(void)
 	fputs("\t-f DEVICE\tTopfield disk to manipulate\n", stderr);
 	fputs("\t-m FILE\t\tUse a previously saved map file\n", stderr);
 	fputs("\t-s SIZE\t\tSet disk size instead of probing device\n", stderr);
+	fputs("\t-c FILE\t\tCopy each block accessed to sparse clone FILE\n", stderr);
 	fputs("commands:\n", stderr);
 	fputs("\tinfo\t\tPrint basic information about the disk\n", stderr);
 	fputs("\tls [dir]\tList contents of a directory\n", stderr);
@@ -82,7 +86,7 @@ parse_options(int argc, char *argv[])
 	int opt;
 	int i;
 
-	while ((opt = getopt(argc, argv, "+f:m:s:")) != -1)
+	while ((opt = getopt(argc, argv, "+f:m:s:c:")) != -1)
 	{
 		switch (opt)
 		{
@@ -94,6 +98,9 @@ parse_options(int argc, char *argv[])
 			break;
 		case 's':
 			opts.size_override = optarg;
+			break;
+		case 'c':
+			opts.sparse_clone = optarg;
 			break;
 		default:
 			usage();
@@ -134,6 +141,9 @@ main(int argc, char *argv[])
 		blkio_set_size_override(size);
 	}
 
+	if (opts.sparse_clone)
+		blkio_open_sparse_clone(opts.sparse_clone);
+
 	if (opts.command_fn)
 	{
 		if ((disk = disk_open(opts.device_path)) == 0)
@@ -151,6 +161,9 @@ main(int argc, char *argv[])
 	{
 		usage();
 	}
+
+	if (opts.sparse_clone)
+		blkio_close_sparse_clone();
 
 	if (success)
 	{

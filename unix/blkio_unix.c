@@ -29,6 +29,8 @@
 #include "common.h"
 #include "blkio.h"
 
+#include "blkio_unix.h"
+
 #define DEFAULT_BLOCK_SIZE 512
 
 struct DevInfo
@@ -157,6 +159,14 @@ blkio_total_blocks(DevInfo *dev)
 	return dev->blocks;
 }
 
+static EachBlockFn each_block_fn;
+
+void
+blkio_each_block_fn(EachBlockFn fn)
+{
+	each_block_fn = fn;
+}
+
 uint64_t
 blkio_read(DevInfo *dev, void *buf, uint64_t offset, uint64_t count)
 {
@@ -185,6 +195,9 @@ blkio_read(DevInfo *dev, void *buf, uint64_t offset, uint64_t count)
 		error("blkio_read", "short read - wanted 0x%" PRIx64 " bytes, got 0x%" PRIx64 " bytes", count, bytes);
 		return -1;
 	}
+
+	if (each_block_fn)
+		each_block_fn(dev, buf, offset, count);
 
 	return bytes;
 }
