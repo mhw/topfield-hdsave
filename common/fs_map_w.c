@@ -56,12 +56,25 @@ map_close()
 	map = 0;
 }
 
+static void
+map_clusters(FileHandle *f)
+{
+	int c;
+
+	for (c = 0; c < f->num_clusters; c++)
+	{
+		if (c > 0)
+			map_printf(",");
+		map_printf("[%" PRId32 ",%" PRId32 "]", f->clusters[c].cluster, f->clusters[c].bytes_used);
+	}
+}
+
 static int walk_dir(FileHandle *dir);
 
 static int
 walk_dir_entry(FileHandle *dir, void *arg, DirEntry *entry, int index)
 {
-	FileHandle *subdir;
+	FileHandle *file;
 
 	switch (entry->type)
 	{
@@ -72,16 +85,21 @@ walk_dir_entry(FileHandle *dir, void *arg, DirEntry *entry, int index)
 		break;
 	case DIR_ENTRY_FILEA:
 	case DIR_ENTRY_FILET:
-		map_printf("%s: \n", entry->filename);
+		map_printf("%s: ", entry->filename);
+		if ((file = file_open_dir_entry(dir, entry)) == 0)
+			return 0;
+		map_clusters(file);
+		file_close(file);
+		map_printf("\n");
 		break;
 	case DIR_ENTRY_SUBDIR:
 		map_printf("%s: {\n", entry->filename);
-		if ((subdir = file_open_dir_entry(dir, entry)) == 0)
+		if ((file = file_open_dir_entry(dir, entry)) == 0)
 			return 0;
-		if (!walk_dir(subdir))
+		if (!walk_dir(file))
 			return 0;
-		file_close(subdir);
-		map_printf("}\n", entry->filename);
+		file_close(file);
+		map_printf("}\n");
 		break;
 	default:
 		fs_error("unrecognised directory entry type %d", entry->type);
