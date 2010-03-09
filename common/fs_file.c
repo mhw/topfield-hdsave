@@ -104,7 +104,7 @@ file_handle_init(char *where, FSInfo *fs, DirEntry *entry)
 		break;
 	}
 	file->filesize_needs_fixup = filesize_needs_fixup;
-	file->filesize = clusters*fs->bytes_per_cluster - unused;
+	file->filesize = (uint64_t)clusters*fs->bytes_per_cluster - unused;
 	file->num_clusters = clusters;
 	file->offset = 0;
 
