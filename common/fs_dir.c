@@ -37,13 +37,13 @@ fs_dir_each_entry(FileHandle *dir, EachDirEntryFn fn, void *arg)
 		for (entry = (DirEntry *)dir->buffer, i = 0;
 				entry < (DirEntry *)(dir->buffer+dir->nread);
 				entry++, i++)
-			if (fn && !fn(dir->fs, arg, entry, i))
+			if (fn && !fn(dir, arg, entry, i))
 				return entry;
 	return 0;
 }
 
 static int
-fs_dir_entry_filename_match(FSInfo *fs, void *filename, DirEntry *entry, int index)
+fs_dir_entry_filename_match(FileHandle *dir, void *filename, DirEntry *entry, int index)
 {
 	if (strcmp(filename, entry->filename) == 0)
 		return 0;

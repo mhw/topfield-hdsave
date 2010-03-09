@@ -102,7 +102,7 @@ extern void fs_close(FSInfo *fs);
 
 /* fs_dir.c */
 
-typedef int (*EachDirEntryFn)(FSInfo *fs, void *arg, DirEntry *entry, int index);
+typedef int (*EachDirEntryFn)(FileHandle *dir, void *arg, DirEntry *entry, int index);
 
 extern DirEntry *fs_dir_each_entry(FileHandle *dir, EachDirEntryFn fn, void *arg);
 extern DirEntry *fs_dir_find(FileHandle *dir, char *filename);
