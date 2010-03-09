@@ -100,6 +100,10 @@ extern void disk_close(DiskInfo *disk);
 extern FSInfo *fs_open_disk(DiskInfo *disk);
 extern void fs_close(FSInfo *fs);
 
+/* fs_map_w.c */
+
+extern int map_write(FSInfo *fs, char *path);
+
 /* fs_dir.c */
 
 typedef int (*EachDirEntryFn)(FileHandle *dir, void *arg, DirEntry *entry, int index);

@@ -2,7 +2,7 @@ CFLAGS=-g -I. -I../common -D_FILE_OFFSET_BITS=64
 
 VPATH=.:../common
 
-COMMON=common.o fs.o fs_dir.o fs_dir_ls.o fs_file.o fs_fat.o fs_io.o
+COMMON=common.o fs.o fs_map_w.o fs_dir.o fs_dir_ls.o fs_file.o fs_fat.o fs_io.o
 OBJS=tfhd.o $(COMMON) blkio_unix.o common_unix.o
 
 tfhd: $(OBJS)
@@ -13,6 +13,7 @@ clean:
 tfhd.o:		fs.h blkio.h common.h port.h
 common.o:	common.h port.h
 fs.o:		fs.h blkio.h common.h port.h
+fs_map_w.o:	fs.h blkio.h common.h port.h
 fs_dir.o:	fs.h blkio.h common.h port.h
 fs_dir_ls.o:	fs.h blkio.h common.h port.h
 fs_file.o:	fs.h blkio.h common.h port.h

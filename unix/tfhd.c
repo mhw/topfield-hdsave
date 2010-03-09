@@ -37,6 +37,7 @@ typedef int (*CommandFn)(int argc, char *argv[]);
 static int info_cmd(int argc, char *argv[]);
 static int ls_cmd(int argc, char *argv[]);
 static int cp_cmd(int argc, char *argv[]);
+static int map_cmd(int argc, char *argv[]);
 
 typedef struct {
 	char *device_path;
@@ -56,6 +57,7 @@ static Command commands[] = {
         { "info", info_cmd },
         { "ls", ls_cmd },
         { "cp", cp_cmd },
+        { "map", map_cmd },
 };
 
 static void
@@ -70,6 +72,7 @@ usage(void)
 	fputs("\tinfo\t\tPrint basic information about the disk\n", stderr);
 	fputs("\tls [dir]\tList contents of a directory\n", stderr);
 	fputs("\tcp <src> <dst>\tCopy contents of a file to host filesystem\n", stderr);
+	fputs("\tmap <file>\tWrite a disk map to <file>\n", stderr);
 	exit(EXIT_FAILURE);
 }
 
@@ -235,4 +238,13 @@ cp_cmd(int argc, char *argv[])
 		return 0;
 	}
 	return 1;
+}
+
+static int
+map_cmd(int argc, char *argv[])
+{
+	if (argc != 2)
+		fprintf(stderr, "usage: map <file>\n");
+
+	return map_write(fs, argv[1]);
 }
